@@ -1,0 +1,49 @@
+:root {
+  --bg: #1f1812;
+  --bg-elev: #2a2119;
+  --paper: #3d2f22;
+  --ink: #f1e6d3;
+  --ink-muted: #c4b298;
+  --accent: #c49a6c;
+  --accent-hover: #d9b289;
+  --heart: #c85a5a;
+  --tick: #7ba664;
+  --close: #b89985;
+  --star: #e6c65c;
+  --border: #4a3828;
+
+  --sans: 'Trebuchet MS', Arial, sans-serif;
+
+  font: 16px/1.5 var(--sans);
+  color: var(--ink);
+  background: var(--bg);
+  color-scheme: dark;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+}
+
+#root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+input {
+  font-family: inherit;
+}
+
+h1, h2, h3 {
+  color: var(--ink);
+  font-weight: 500;
+  margin: 0;
+}
