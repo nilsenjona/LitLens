@@ -1,9 +1,9 @@
-'use strict';
+import type { AnthropicMessagesResponse, RawRec } from '../types';
 
 const MODEL = 'claude-opus-4-7';
 const MAX_TOKENS = 1000;
 
-const buildPrompt = (title, author, year) => {
+const buildPrompt = (title: string, author: string | undefined, year: number | undefined): string => {
   const yearPart = year ? ` (${year})` : '';
   const authorPart = author ? ` by ${author}` : '';
   return (
@@ -18,7 +18,13 @@ const buildPrompt = (title, author, year) => {
   );
 };
 
-exports.getRecommendations = async ({ title, author, year }) => {
+interface LlmInput {
+  title: string;
+  author?: string;
+  year?: number;
+}
+
+export const getRecommendations = async ({ title, author, year }: LlmInput): Promise<RawRec[]> => {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) throw new Error('ANTHROPIC_API_KEY not set');
 
@@ -43,11 +49,11 @@ exports.getRecommendations = async ({ title, author, year }) => {
     throw new Error(`LLM API failed (${res.status}): ${body}`);
   }
 
-  const data = await res.json();
+  const data = await res.json() as AnthropicMessagesResponse;
   const text = data.content && data.content[0] && data.content[0].text;
   if (!text) throw new Error('LLM API returned no text');
 
-  const recs = JSON.parse(text);
-  if (!Array.isArray(recs)) throw new Error('LLM API did not return an array');
-  return recs;
+  const parsed: unknown = JSON.parse(text);
+  if (!Array.isArray(parsed)) throw new Error('LLM API did not return an array');
+  return parsed as RawRec[];
 };

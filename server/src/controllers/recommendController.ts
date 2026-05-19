@@ -1,12 +1,22 @@
-'use strict';
+import type { Request, Response, NextFunction } from 'express';
+import Api1Cache from '../models/Api1Cache';
+import Api4Cache from '../models/Api4Cache';
+import * as openLibrary from '../services/openLibrary';
+import * as llm from '../services/llm';
+import { normalizeQuery, pickDocFields } from '../util/helpers';
+import type {
+  ErrorBody,
+  IncomingBook,
+  RawRec,
+  RecommendRequestBody,
+  RecommendResponseBody,
+  RecommendResult,
+  ResolvedRec,
+  SearchDocApi,
+  StoredRec,
+} from '../types';
 
-const Api1Cache = require('../models/Api1Cache');
-const Api4Cache = require('../models/Api4Cache');
-const openLibrary = require('../services/openLibrary');
-const llm = require('../services/llm');
-const { normalizeQuery, pickDocFields } = require('../util/helpers');
-
-const lookupWork = async q => {
+const lookupWork = async (q: string): Promise<SearchDocApi | null> => {
   const qKey = normalizeQuery(q);
 
   const cached = await Api1Cache.findOne({ q: qKey }).lean();
@@ -19,8 +29,8 @@ const lookupWork = async q => {
   return docs[0] || null;
 };
 
-const resolveRec = async rec => {
-  let doc = null;
+const resolveRec = async (rec: StoredRec): Promise<ResolvedRec> => {
+  let doc: SearchDocApi | null = null;
 
   if (rec.isbn13 && /^\d{13}$/.test(rec.isbn13)) {
     doc = await lookupWork(rec.isbn13);
@@ -44,17 +54,17 @@ const resolveRec = async rec => {
   };
 };
 
-const getRecsForBook = async book => {
+const getRecsForBook = async (book: IncomingBook): Promise<StoredRec[]> => {
   const cached = await Api4Cache.findOne({ key: book.key }).lean();
   if (cached) return cached.recs;
 
-  const recs = await llm.getRecommendations({
+  const recs: RawRec[] = await llm.getRecommendations({
     title: book.title,
     author: book.author,
     year: book.year,
   });
 
-  const stored = recs.slice(0, 3).map((r, i) => ({
+  const stored: StoredRec[] = recs.slice(0, 3).map((r, i) => ({
     seq: i + 1,
     title: r.title || '',
     author: r.author || '',
@@ -68,26 +78,30 @@ const getRecsForBook = async book => {
   return stored;
 };
 
-exports.recommend = async (req, res, next) => {
+export const recommend = async (
+  req: Request<unknown, RecommendResponseBody | ErrorBody, RecommendRequestBody>,
+  res: Response<RecommendResponseBody | ErrorBody>,
+  next: NextFunction,
+): Promise<void> => {
   try {
     const { books } = req.body;
 
     if (!Array.isArray(books) || !books.length) {
-      return res.status(400).json({
+      res.status(400).json({
         error: 'Missing required field: books (non-empty array)',
       });
+      return;
     }
 
-    const results = [];
+    const results: RecommendResult[] = [];
     for (const book of books) {
       if (!book.key || !book.title) {
-        return res.status(400).json({
-          error: 'Each book must have key and title',
-        });
+        res.status(400).json({ error: 'Each book must have key and title' });
+        return;
       }
 
       const recs = await getRecsForBook(book);
-      const resolved = [];
+      const resolved: ResolvedRec[] = [];
       for (const rec of recs) {
         resolved.push(await resolveRec(rec));
       }
