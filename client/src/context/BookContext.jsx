@@ -22,12 +22,25 @@ const bookRef = book => ({
 
 const sameBook = (a, b) => a && b && a.key === b.key;
 
+const SESSION_KEY = 'litlens-session';
+
+const loadSession = () => {
+  try {
+    const raw = sessionStorage.getItem(SESSION_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+};
+
 export const BookProvider = ({ children }) => {
-  const [view, setView] = useState('main');
-  const [prevView, setPrevView] = useState('main');
-  const [phase, setPhase] = useState('search');
-  const [rows, setRows] = useState([emptyRow()]);
-  const [detailsBook, setDetailsBook] = useState(null);
+  const saved = loadSession();
+
+  const [view, setView] = useState(saved?.view || 'main');
+  const [prevView, setPrevView] = useState(saved?.prevView || 'main');
+  const [phase, setPhase] = useState(saved?.phase || 'search');
+  const [rows, setRows] = useState(saved?.rows || [emptyRow()]);
+  const [detailsBook, setDetailsBook] = useState(saved?.detailsBook || null);
 
   const [readingList, setReadingList] = useState([]);
   const [booksRead, setBooksRead] = useState([]);
@@ -47,6 +60,17 @@ export const BookProvider = ({ children }) => {
       })
       .catch(err => setError(err.message));
   }, []);
+
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(
+        SESSION_KEY,
+        JSON.stringify({ view, prevView, phase, rows, detailsBook })
+      );
+    } catch {
+      // sessionStorage may be disabled; ignore
+    }
+  }, [view, prevView, phase, rows, detailsBook]);
 
   const persist = async partial => {
     try {

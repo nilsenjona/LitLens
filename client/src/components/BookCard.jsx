@@ -1,17 +1,20 @@
 import { useBooks } from '../context/BookContext';
 import { buildCoverUrl } from '../services/coverUrl';
 
-function BookCard({ book, onClick, onRemove, showActions = true }) {
+function BookCard({ book, onClick, onRemove, showActions = true, showRating = false }) {
   const {
     isInReadingList,
     isFavorite,
     toggleReadingList,
     toggleFavorite,
+    getRating,
+    setRating,
   } = useBooks();
 
   const cover = buildCoverUrl(book.cover_i);
   const inReading = isInReadingList(book.key);
   const favorite = isFavorite(book.key);
+  const stars = showRating ? getRating(book.key) : 0;
 
   const handleOpen = () => {
     if (onClick && book.key) onClick(book);
@@ -64,6 +67,21 @@ function BookCard({ book, onClick, onRemove, showActions = true }) {
         <div className="book-title">{book.title}</div>
         <div className="book-author">{book.author || (book.author_name && book.author_name[0]) || ''}</div>
         <div className="book-year">{book.year || book.first_publish_year || ''}</div>
+        {showRating && (
+          <div className="book-rating">
+            {[1, 2, 3, 4, 5].map(n => (
+              <button
+                key={n}
+                type="button"
+                className={`card-star ${n <= stars ? 'active' : ''}`}
+                title={`Rate ${n}`}
+                onClick={stop(() => setRating(book.key, n === stars ? 0 : n))}
+              >
+                ★
+              </button>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

@@ -18,6 +18,7 @@ function BooksReadPage() {
               key={book.key}
               book={book}
               onClick={() => openDetails(book)}
+              showRating
             />
           ))}
         </div>

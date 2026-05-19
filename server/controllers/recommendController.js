@@ -9,7 +9,7 @@ const { normalizeQuery, pickDocFields } = require('../util/helpers');
 const lookupWork = async q => {
   const qKey = normalizeQuery(q);
 
-  const cached = await Api1Cache.findOne({ q: qKey });
+  const cached = await Api1Cache.findOne({ q: qKey }).lean();
   if (cached) return cached.docs[0] || null;
 
   const data = await openLibrary.searchWorks(q);
@@ -32,14 +32,20 @@ const resolveRec = async rec => {
   }
 
   return {
-    ...rec,
+    seq: rec.seq,
+    title: rec.title || '',
+    author: rec.author || '',
+    year: typeof rec.year === 'number' ? rec.year : undefined,
+    isbn13: rec.isbn13 || '',
+    theme: rec.theme || '',
+    reason: rec.reason || '',
     key: doc ? doc.key : '',
     cover_i: doc ? doc.cover_i : undefined,
   };
 };
 
 const getRecsForBook = async book => {
-  const cached = await Api4Cache.findOne({ key: book.key });
+  const cached = await Api4Cache.findOne({ key: book.key }).lean();
   if (cached) return cached.recs;
 
   const recs = await llm.getRecommendations({

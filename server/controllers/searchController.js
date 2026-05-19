@@ -18,7 +18,7 @@ exports.search = async (req, res, next) => {
 
     const qKey = normalizeQuery(q);
 
-    const cached = await Api1Cache.findOne({ q: qKey });
+    const cached = await Api1Cache.findOne({ q: qKey }).lean();
     if (cached) {
       return res.json({ docs: cached.docs });
     }
