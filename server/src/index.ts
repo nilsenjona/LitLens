@@ -1,15 +1,14 @@
-'use strict';
+import dotenv from 'dotenv';
+dotenv.config({ override: true });
 
-require('dotenv').config({ override: true });
-
-const express = require('express');
-const cors = require('cors');
-const mongoose = require('mongoose');
-const bookRoutes = require('./routes/bookRoutes');
-const listsRoutes = require('./routes/listsRoutes');
+import express, { type Request, type Response, type NextFunction } from 'express';
+import cors from 'cors';
+import mongoose from 'mongoose';
+import bookRoutes from './routes/bookRoutes';
+import listsRoutes from './routes/listsRoutes';
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = Number(process.env.PORT) || 3000;
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/litlens';
 
 mongoose.connect(MONGO_URI)
@@ -22,7 +21,7 @@ app.use(express.json());
 app.use('/api', bookRoutes);
 app.use('/api', listsRoutes);
 
-app.use((err, req, res, next) => {
+app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
   console.error(err);
   res.status(500).json({ error: 'Internal server error' });
 });
